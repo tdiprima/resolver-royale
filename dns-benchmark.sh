@@ -3,8 +3,6 @@
 # Ported from PowerShell. Requires: dig, bc
 # Usage: ./dns-benchmark.sh [--apply] [--restore]
 
-set -euo pipefail
-
 # ─── ANSI Colors ──────────────────────────────────────────────────────────────
 RED='\033[0;31m';    LRED='\033[1;31m'
 GREEN='\033[0;32m';  LGREEN='\033[1;32m'
@@ -146,6 +144,25 @@ get_current_dns() {
 
   CURRENT_DNS="${dns_ip:-unknown}"
   CURRENT_DNS_SOURCE="${dns_source:-unknown}"
+}
+
+# ─── Add Current DNS to Benchmark ─────────────────────────────────────────────
+# Adds the user's current resolver as a competitor unless it already matches
+# one of the known servers.
+add_current_dns() {
+  local current_ip="$1"
+  if [[ -z "$current_ip" || "$current_ip" == "unknown" ]]; then
+    return
+  fi
+
+  for key in "${SERVER_KEYS[@]}"; do
+    if [[ "${DNS_IPS[$key]}" == "$current_ip" ]]; then
+      return
+    fi
+  done
+
+  add_server "current_dns" "Current DNS" "$current_ip" "Unknown" "Unknown"
+  SERVER_KEYS=("current_dns" "${SERVER_KEYS[@]}")
 }
 
 # ─── Benchmark a Single Server ────────────────────────────────────────────────
@@ -400,29 +417,34 @@ print_winner() {
   echo -e "${LGREEN}╚══════════════════════════════════════════════════════╝${RESET}"
   echo ""
 
-  echo -e "  ${BOLD}To apply this DNS (requires sudo):${RESET}"
-  case "$OS" in
-    mac)
-      local iface
-      iface=$(networksetup -listallnetworkservices 2>/dev/null | grep -v "^\*" | head -1 || echo "Wi-Fi")
-      echo -e "    ${CYAN}sudo networksetup -setdnsservers \"${iface}\" ${ip}${RESET}"
-      echo -e "  ${BOLD}To restore DHCP DNS:${RESET}"
-      echo -e "    ${CYAN}sudo networksetup -setdnsservers \"${iface}\" Empty${RESET}"
-      ;;
-    ubuntu|linux)
-      echo -e "    ${CYAN}sudo nmcli con mod \"\$(nmcli -t -f NAME con show --active | head -1)\" ipv4.dns ${ip}${RESET}"
-      echo -e "    ${CYAN}sudo nmcli con up \"\$(nmcli -t -f NAME con show --active | head -1)\"${RESET}"
-      echo -e "  ${BOLD}Or via /etc/resolv.conf (transient):${RESET}"
-      echo -e "    ${CYAN}echo 'nameserver ${ip}' | sudo tee /etc/resolv.conf${RESET}"
-      ;;
-    rhel)
-      echo -e "    ${CYAN}sudo nmcli con mod \"\$(nmcli -t -f NAME con show --active | head -1)\" ipv4.dns ${ip} ipv4.ignore-auto-dns yes${RESET}"
-      echo -e "    ${CYAN}sudo nmcli con up \"\$(nmcli -t -f NAME con show --active | head -1)\"${RESET}"
-      ;;
-  esac
-  echo ""
-  echo -e "  ${DIM}Or re-run with: sudo $0 --apply${RESET}"
-  echo ""
+  if [[ "$key" == "current_dns" ]]; then
+    echo -e "  ${LGREEN}Your current DNS is already the fastest — no changes needed.${RESET}"
+    echo ""
+  else
+    echo -e "  ${BOLD}To apply this DNS (requires sudo):${RESET}"
+    case "$OS" in
+      mac)
+        local iface
+        iface=$(networksetup -listallnetworkservices 2>/dev/null | grep -v "^\*" | head -1 || echo "Wi-Fi")
+        echo -e "    ${CYAN}sudo networksetup -setdnsservers \"${iface}\" ${ip}${RESET}"
+        echo -e "  ${BOLD}To restore DHCP DNS:${RESET}"
+        echo -e "    ${CYAN}sudo networksetup -setdnsservers \"${iface}\" Empty${RESET}"
+        ;;
+      ubuntu|linux)
+        echo -e "    ${CYAN}sudo nmcli con mod \"\$(nmcli -t -f NAME con show --active | head -1)\" ipv4.dns ${ip}${RESET}"
+        echo -e "    ${CYAN}sudo nmcli con up \"\$(nmcli -t -f NAME con show --active | head -1)\"${RESET}"
+        echo -e "  ${BOLD}Or via /etc/resolv.conf (transient):${RESET}"
+        echo -e "    ${CYAN}echo 'nameserver ${ip}' | sudo tee /etc/resolv.conf${RESET}"
+        ;;
+      rhel)
+        echo -e "    ${CYAN}sudo nmcli con mod \"\$(nmcli -t -f NAME con show --active | head -1)\" ipv4.dns ${ip} ipv4.ignore-auto-dns yes${RESET}"
+        echo -e "    ${CYAN}sudo nmcli con up \"\$(nmcli -t -f NAME con show --active | head -1)\"${RESET}"
+        ;;
+    esac
+    echo ""
+    echo -e "  ${DIM}Or re-run with: sudo $0 --apply${RESET}"
+    echo ""
+  fi
 }
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -438,6 +460,7 @@ main() {
 
   # ── Current DNS ──────────────────────────────────────────────────────────────
   get_current_dns
+  add_current_dns "$CURRENT_DNS"
   echo -e "  ${BOLD}Current DNS:${RESET}  ${LMAGENTA}${CURRENT_DNS}${RESET}"
   echo -e "  ${BOLD}Source file:${RESET}  ${DIM}${CURRENT_DNS_SOURCE}${RESET}"
   echo ""
