@@ -44,10 +44,16 @@ add_server "norton"          "Norton ConnectSafe"       "199.85.126.10"  "Medium
 add_server "adguard"         "AdGuard"                  "94.140.14.14"   "High"   "Yes"
 add_server "adguard_fam"     "AdGuard Family"           "94.140.14.15"   "High"   "Yes"
 add_server "nextdns"         "NextDNS"                  "45.90.28.0"     "High"   "Yes"
+add_server "cleanbrowse_sec" "CleanBrowsing Security"  "185.228.168.9"  "High"   "Yes"
+add_server "cleanbrowse_fam" "CleanBrowsing Family"    "185.228.168.168" "High"  "Yes"
+add_server "mullvad"         "Mullvad"                  "194.242.2.2"    "High"   "Yes"
+add_server "controld"        "Control D"                "76.76.2.0"      "High"   "Yes"
+add_server "neustar"         "Neustar UltraDNS"         "64.6.64.6"      "Medium" "Yes"
 
 SERVER_KEYS=(cloudflare cloudflare_sec cloudflare_fam google google2 quad9
              quad9_unsec opendns opendns2 opendns_fam comodo level3 level3b
-             norton adguard adguard_fam nextdns)
+             norton adguard adguard_fam nextdns cleanbrowse_sec cleanbrowse_fam
+             mullvad controld neustar)
 
 # Test domains — diverse, real-world mix
 TEST_DOMAINS=(
