@@ -2,7 +2,7 @@
 
 A cross-platform DNS benchmark that races 22 public resolvers against your current DNS and tells you which one is actually fastest from your location.
 
-## Your DNS Is Probably Slower Than It Should Be
+## Your DNS Might Be Slower Than It Should Be
 
 ISP-assigned DNS resolvers are often the bottleneck you never think to check. Switching to a faster public resolver can shave milliseconds off every single network request your machine makes — page loads, API calls, `git fetch`, package installs. The catch: "fastest" depends entirely on where you are. Cloudflare wins in some regions, Google in others, Quad9 somewhere else. Without measuring from your own machine, you're guessing.
 
