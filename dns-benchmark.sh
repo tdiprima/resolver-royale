@@ -411,7 +411,7 @@ print_winner() {
   grade=$(letter_grade "$score")
 
   echo -e "${LGREEN}╔══════════════════════════════════════════════════════╗${RESET}"
-  echo -e "${LGREEN}║${RESET}  ${BOLD}${YELLOW}🏆  Fastest DNS: ${name}${RESET}"
+  echo -e "${LGREEN}║${RESET}  ${BOLD}${YELLOW}🏆  Best DNS: ${name}${RESET}"
   echo -e "${LGREEN}║${RESET}     ${LBLUE}IP:${RESET}          ${WHITE}${ip}${RESET}"
   echo -e "${LGREEN}║${RESET}     ${LBLUE}Avg Latency:${RESET} ${WHITE}${avg} ms${RESET}"
   echo -e "${LGREEN}║${RESET}     ${LBLUE}Median:${RESET}      ${WHITE}${med} ms${RESET}"
@@ -424,7 +424,7 @@ print_winner() {
   echo ""
 
   if [[ "$key" == "current_dns" ]]; then
-    echo -e "  ${LGREEN}Your current DNS is already the fastest — no changes needed.${RESET}"
+    echo -e "  ${LGREEN}Your current DNS is already the best — no changes needed.${RESET}"
     echo ""
   else
     echo -e "  ${BOLD}To apply this DNS (requires sudo):${RESET}"
@@ -450,6 +450,20 @@ print_winner() {
     echo ""
     echo -e "  ${DIM}Or re-run with: sudo $0 --apply${RESET}"
     echo ""
+
+    # Note if current DNS has lower avg latency than the composite winner
+    for entry in "${SORTED_RESULTS[@]}"; do
+      local ekey eavg
+      IFS='|' read -r ekey _ eavg _ _ _ <<< "$entry"
+      if [[ "$ekey" == "current_dns" ]]; then
+        if (( $(echo "$eavg < $avg" | bc -l) )); then
+          echo -e "  ${YELLOW}Note:${RESET} Your current DNS has lower avg latency (${eavg}ms vs ${avg}ms),"
+          echo -e "  but ${name} ranked higher on composite score (median, jitter, reliability)."
+          echo ""
+        fi
+        break
+      fi
+    done
   fi
 }
 
